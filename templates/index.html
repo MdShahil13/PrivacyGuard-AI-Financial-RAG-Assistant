@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAG Chatbot</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+body {
+    background: #1e1e2f;
+    color: white;
+    font-family: Arial;
+    margin: 0;
+}
+
+.chat-container {
+    max-width: 700px;
+    margin: 40px auto;
+    background: #2c2f3b;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    height: 85vh;
+}
+
+.chat-header {
+    padding: 20px;
+    background: #19c37d;
+    color: black;
+    font-weight: bold;
+    font-size: 20px;
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.message {
+    margin-bottom: 15px;
+    display: flex;
+}
+
+.user { justify-content: flex-end; }
+.bot { justify-content: flex-start; }
+
+.bubble {
+    padding: 12px 16px;
+    border-radius: 10px;
+    max-width: 70%;
+}
+
+.user .bubble {
+    background: #19c37d;
+    color: black;
+}
+
+.bot .bubble {
+    background: #444654;
+}
+
+.chat-input {
+    display: flex;
+    padding: 15px;
+    border-top: 1px solid #555;
+}
+
+.chat-input input {
+    flex: 1;
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+}
+
+.chat-input button {
+    margin-left: 10px;
+    padding: 10px 15px;
+    background: #19c37d;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<div class="chat-container">
+
+    <div class="chat-header">
+       PrivacyGuard AI: Financial RAG Assistant
+    </div>
+
+    <div id="chat-messages" class="chat-messages"></div>
+
+    <form id="chat-form" class="chat-input">
+        <input id="user-input" type="text" placeholder="Ask something..." required />
+        <button type="submit"><i class="fa fa-paper-plane"></i></button>
+    </form>
+
+</div>
+
+<script>
+const chatMessages = document.getElementById('chat-messages');
+const chatForm = document.getElementById('chat-form');
+const userInput = document.getElementById('user-input');
+
+function addMessage(text, sender) {
+    const msg = document.createElement('div');
+    msg.className = 'message ' + sender;
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.innerText = text;
+
+    msg.appendChild(bubble);
+    chatMessages.appendChild(msg);
+
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+chatForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const question = userInput.value.trim();
+    if (!question) return;
+
+    addMessage(question, 'user');
+    userInput.value = '';
+
+    // 🔄 loading message
+    const loadingMsg = document.createElement('div');
+    loadingMsg.className = 'message bot';
+    loadingMsg.innerHTML = '<div class="bubble">Thinking...</div>';
+    chatMessages.appendChild(loadingMsg);
+
+    try {
+        const response = await fetch('/chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ query: question })
+        });
+
+        const data = await response.json();
+
+        chatMessages.removeChild(loadingMsg);
+
+        addMessage(data.answer || "No response", 'bot');
+
+    } catch (error) {
+        chatMessages.removeChild(loadingMsg);
+        addMessage("❌ Server error. Check Flask/Ollama.", 'bot');
+    }
+});
+</script>
+
+</body>
+</html>
